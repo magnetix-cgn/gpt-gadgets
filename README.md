@@ -95,3 +95,10 @@ The process must remain running; reboot autostart is not installed automatically
 `app.py` uses the Python standard library. `recording.py` needs Whisper and
 ffmpeg; `speech.py` invokes local eSpeak/Piper and paplay/aplay executables.
 The dashboard has no external JavaScript, font, or CDN dependencies.
+
+## Branding
+
+The dashboard uses the Eventhacker logo supplied through the project owner's
+[Eventhacker profile](https://profil.eventhacker.de/). The shipped asset is a
+lossless WebP derivative with transparency; private media-source configuration
+is not included in this repository.

@@ -220,7 +220,7 @@ class Bridge:
 def handler(bridge, port):
     class Handler(BaseHTTPRequestHandler):
         def send(self, code, value, content_type='application/json'):
-            data = value.encode('utf-8') if isinstance(value, str) else json.dumps(value).encode('utf-8')
+            data = value if isinstance(value, bytes) else (value.encode('utf-8') if isinstance(value, str) else json.dumps(value).encode('utf-8'))
             self.send_response(code)
             self.send_header('Content-Type', content_type + '; charset=utf-8')
             self.send_header('Content-Length', str(len(data)))
@@ -241,6 +241,8 @@ def handler(bridge, port):
             path = urlparse(self.path).path
             if path == '/':
                 return self.send(200, (BASE / 'index.html').read_text(encoding='utf-8'), 'text/html')
+            if path == '/assets/eventhacker-logo-white.webp':
+                return self.send(200, (BASE / 'assets/eventhacker-logo-white.webp').read_bytes(), 'image/webp')
             if path == '/api/status':
                 return self.send(200, bridge.status())
             return self.send(404, {'error': 'Not found'})
