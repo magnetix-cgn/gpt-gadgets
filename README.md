@@ -14,8 +14,8 @@ is separate and may still consume cloud usage.
   microphone recognition. Selections and speaking speed are saved locally.
 - Record up to 60 seconds in the browser, preview the recording, and transcribe
   it locally with Whisper. Speech output pauses while recording.
-- Edit and copy recognized text, then paste it into the chat. Automatic chat
-  submission is not implemented.
+- Edit recognized text and click **An Chat senden** to queue it for the
+  connected Codex chat, or copy it manually. Nothing is sent without a click.
 
 The default voice is eSpeak, which sounds synthetic. A valid local Piper model
 can be used through the speech command-line helper. The dashboard currently
@@ -56,6 +56,21 @@ Browser audio is posted only to this loopback server, normalized with ffmpeg,
 and transcribed with an already downloaded Whisper base model on the CPU.
 There are no model downloads during transcription. DE and EN are explicit
 choices; other languages and automatic language detection are not offered.
+
+## Send dictation to the chat
+
+The **An Chat senden** button uses the installed local Codex CLI's
+`queue --thread ... --message ... --resume` command. Its destination comes only
+from the selected transcript's session metadata, never from browser input.
+The button requires non-empty text and an available CLI. A successful result
+means Codex accepted the message into its queue; it does not mean an answer
+has already been generated. The original editable text is retained.
+
+Set `GPT_GADGETS_CODEX_CLI` to an absolute Codex executable path if needed.
+Otherwise the app uses `CODEX_APP_RUNTIME_CLI_PATH` or finds `codex` on PATH.
+The CLI must support `codex queue`. A failed resume can leave an accepted
+message waiting for the chat to resume in Codex. Requests are deduplicated by
+identifier within the running server process; there is no automatic retry.
 
 ## Local data and configuration
 

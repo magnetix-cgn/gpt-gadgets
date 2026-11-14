@@ -13,6 +13,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
+from chat import selected_thread, codex_cli, send_message
 
 BASE = Path(__file__).resolve().parent
 OUTPUT = Path(os.environ.get('GPT_GADGETS_DATA_DIR', str(BASE / 'out.user.local'))).expanduser().resolve()
@@ -41,6 +42,10 @@ def speech_text(row):
 class Bridge:
     def __init__(self, session, config=CONFIG):
         self.session = session
+        self.thread = selected_thread(session)
+        self.cli = codex_cli()
+        self.sent = collections.OrderedDict()
+        self.send_lock = threading.Lock()
         self.config = config
         self.lock = threading.RLock()
         self.queue = collections.deque()
@@ -77,7 +82,7 @@ class Bridge:
                         speaking=self.process is not None, queued=len(self.queue),
                         spoken=self.spoken, last_text=self.last_text, error=self.error,
                         chat='Current connected chat', recording=self.recording,
-                        transcription=dict(self.transcription))
+                        transcription=dict(self.transcription), chat_ready=bool(self.thread and self.cli))
 
     def stop(self):
         with self.lock:
@@ -110,6 +115,20 @@ class Bridge:
         with self.lock:
             if self.enabled and text:
                 self.queue.append(text)
+
+    def send_chat(self, text, request_id):
+        try:
+            request_id = str(uuid.UUID(request_id))
+        except (ValueError, TypeError, AttributeError):
+            raise ValueError('A valid request identifier is required')
+        with self.send_lock:
+            if request_id in self.sent:
+                return self.sent[request_id]
+            result = send_message(self.cli, self.thread, text)
+            self.sent[request_id] = result
+            if len(self.sent) > 100:
+                self.sent.popitem(last=False)
+            return result
 
     def set_recording(self, active):
         if type(active) is not bool:
@@ -268,11 +287,13 @@ def handler(bridge, port):
                 return self.send(403, {'error': 'Local JSON requests only'})
             try:
                 size = int(self.headers.get('Content-Length', '0'))
-                if not 0 < size <= 4096:
+                if not 0 < size <= 65536:
                     raise ValueError('Invalid request size')
                 value = json.loads(self.rfile.read(size))
                 if not isinstance(value, dict):
                     raise ValueError('Expected an object')
+                if self.path == '/api/chat/send':
+                    return self.send(200, bridge.send_chat(value.get('text'), value.get('request_id')))
                 if self.path == '/api/settings':
                     bridge.settings(value)
                 elif self.path == '/api/test':
@@ -284,7 +305,7 @@ def handler(bridge, port):
                 else:
                     return self.send(404, {'error': 'Not found'})
                 return self.send(200, bridge.status())
-            except (ValueError, OSError) as error:
+            except (ValueError, OSError, subprocess.SubprocessError) as error:
                 return self.send(400, {'error': str(error)})
 
         def log_message(self, format, *args):

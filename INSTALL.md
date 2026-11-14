@@ -74,6 +74,10 @@ default. Only one chat is watched per process. Do not run duplicate processes
 for the same chat. Use `--port` to select another local port if necessary.
 
 Open <http://127.0.0.1:8766/> in Chromium. Leave the server terminal running.
+For the send button, the installed Codex CLI must support `codex queue`.
+If needed, set `GPT_GADGETS_CODEX_CLI` to its absolute executable path before
+launching the server. The same local user must be able to access the chat.
+
 Stop it with Ctrl+C. Start it again with the same command when needed; existing
 settings are preserved. No system service or reboot autostart is installed.
 
@@ -95,10 +99,12 @@ The voice language is explicit; it does not translate the text.
    microphone before the next recording if necessary.
 4. Speak, then click **Stoppen & transkribieren**. Recording also stops after
    60 seconds. The first transcription may take longer while the model loads.
-5. Review the editable transcript and click **Text kopieren**.
-6. Paste the text into the intended chat and send it.
+5. Review the editable transcript and click **An Chat senden**.
+6. Check the delivery status. Alternatively use **Text kopieren** and paste it
+   into the chat manually.
 
-There is no automatic sending to Codex. CPU recognition can take several
+Sending requires your explicit button click. Queue acceptance is reported
+separately from the assistant response; the chat may need to resume in Codex. CPU recognition can take several
 seconds. Recognition can make mistakes; review names and important details.
 Audio and text remain in the configured local output directory.
 
