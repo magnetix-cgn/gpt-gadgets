@@ -40,4 +40,8 @@ def send_message(cli, thread, text, runner=subprocess.run):
     if result.returncode:
         raise ValueError('Codex could not queue the message: ' + (result.stderr or result.stdout)[-1200:])
     # Queue acceptance is distinct from an assistant reply or completed execution.
-    return {'state': 'queued', 'notice': 'Text für den verbundenen Codex-Chat eingereiht.'}
+    notice = 'Text für den verbundenen Codex-Chat eingereiht.'
+    diagnostic = (result.stderr + result.stdout).lower()
+    if 'warn' in diagnostic and any(word in diagnostic for word in ('resume', 'daemon', 'server')):
+        notice += ' Das automatische Fortsetzen ist nicht bestätigt; gegebenenfalls den Chat in Codex fortsetzen.'
+    return {'state': 'queued', 'notice': notice}
